@@ -1,9 +1,9 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import LeadViewSet
+from .views import CaseViewSet
 
 router = DefaultRouter()
-router.register('', LeadViewSet, basename='leads')
+router.register('', CaseViewSet, basename='cases')
 
 urlpatterns = [
     path('', include(router.urls)),
