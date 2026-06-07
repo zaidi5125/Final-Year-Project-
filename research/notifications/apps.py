@@ -5,6 +5,3 @@ class NotificationsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'notifications'
     label = 'user_notifications'
-
-    def ready(self):
-        import notifications.signals
