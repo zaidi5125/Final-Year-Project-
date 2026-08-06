@@ -13,7 +13,7 @@ from .views import (
 
 router = DefaultRouter()
 router.register('roles', RoleViewSet, basename='roles')
-router.register('', UserViewSet, basename='users')
+router.register('users', UserViewSet, basename='users')
 
 urlpatterns = [
     path('auth/login/', LoginView.as_view(), name='login'),
@@ -22,5 +22,5 @@ urlpatterns = [
     path('auth/change-password/', change_password_view, name='change-password'),
     path('auth/me/', me_view, name='me'),
     path('auth/reset-password/<int:user_id>/', admin_reset_password, name='admin-reset-password'),
-    path('users/', include(router.urls)),
+    path('', include(router.urls)),
 ]

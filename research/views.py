@@ -1,8 +1,8 @@
-from rest_framework import viewsets, status
+﻿from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
+from accounts.permissions import HasRolePermission
 from .models import Research, ResearchAssignment, Beneficiary
 from .serializers import (
     ResearchSerializer,
@@ -14,9 +14,19 @@ from .serializers import (
 class ResearchViewSet(viewsets.ModelViewSet):
     queryset = Research.objects.all().order_by('-start_date')
     serializer_class = ResearchSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasRolePermission]
     filterset_fields = ['status']
     search_fields = ['title', 'topic', 'purpose']
+    required_roles = {
+        'list':               ['Admin', 'Sub Admin', 'Team Member', 'Participant', 'Researcher'],
+        'retrieve':           ['Admin', 'Sub Admin', 'Team Member', 'Participant', 'Researcher'],
+        'create':             ['Admin', 'Sub Admin'],
+        'update':             ['Admin', 'Sub Admin'],
+        'partial_update':     ['Admin', 'Sub Admin'],
+        'destroy':            ['Admin'],
+        'assign_researcher':  ['Admin', 'Sub Admin', 'Team Member', 'Participant', 'Researcher'],
+        'beneficiaries':      ['Admin', 'Sub Admin', 'Team Member', 'Participant', 'Researcher'],
+    }
 
     @action(detail=True, methods=['get', 'post'], url_path='assign')
     def assign_researcher(self, request, pk=None):
@@ -27,6 +37,13 @@ class ResearchViewSet(viewsets.ModelViewSet):
         serializer = ResearchAssignmentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(research=research)
+            from notifications.models import Notification
+            Notification.objects.create(
+                user_id=request.data.get('user'),
+                notification_type='research',
+                title='New Research Assigned',
+                message=f'You have been assigned research: {research.title}',
+            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -41,3 +58,4 @@ class ResearchViewSet(viewsets.ModelViewSet):
             serializer.save(research=research)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+

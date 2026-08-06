@@ -1,8 +1,9 @@
-from rest_framework import viewsets, status
+﻿from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
+from accounts.permissions import HasRolePermission
 import pandas as pd
 
 from .models import Lead, CallLog
@@ -14,6 +15,20 @@ class LeadViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filterset_fields = ['lead_type', 'status', 'assigned_to', 'lead_source']
     search_fields = ['full_name', 'contact_number', 'email', 'city']
+    permission_classes = [IsAuthenticated, HasRolePermission]
+
+    required_roles = {
+    'list':          ['Admin', 'Sub Admin', 'Team Member', 'Participant', 'Researcher'],
+    'retrieve':      ['Admin', 'Sub Admin', 'Team Member', 'Participant', 'Researcher'],
+    'create':        ['Admin', 'Sub Admin'],
+    'update':        ['Admin', 'Sub Admin'],
+    'partial_update':['Admin', 'Sub Admin'],
+    'destroy':       ['Admin'],
+    'bulk_upload':   ['Admin', 'Sub Admin'],
+    'add_call_log':  ['Admin', 'Sub Admin', 'Team Member', 'Participant', 'Researcher'],
+    'update_status': ['Admin', 'Sub Admin', 'Team Member', 'Participant', 'Researcher'],
+    'assign_lead':   ['Admin', 'Sub Admin'],
+}
 
     def get_queryset(self):
         user = self.request.user
@@ -128,3 +143,11 @@ class LeadViewSet(viewsets.ModelViewSet):
         lead.assigned_to_id = user_id
         lead.save()
         return Response({'detail': 'Lead assigned successfully!'})
+
+
+
+
+
+
+
+

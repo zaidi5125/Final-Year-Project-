@@ -1,3 +1,4 @@
+# pyrefly: ignore [missing-import]
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -16,13 +17,11 @@ from .serializers import (
 )
 
 
-# ─── Login ───────────────────────────────────────────────────────────────────
 class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
     permission_classes = [AllowAny]
 
 
-# ─── Logout ──────────────────────────────────────────────────────────────────
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
@@ -35,7 +34,6 @@ def logout_view(request):
         return Response({'detail': 'Invalid token.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ─── Change Password ─────────────────────────────────────────────────────────
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def change_password_view(request):
@@ -56,14 +54,23 @@ def change_password_view(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ─── Me ──────────────────────────────────────────────────────────────────────
-@api_view(['GET'])
+@api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def me_view(request):
-    return Response(MeSerializer(request.user).data)
+    user = request.user
+    if request.method == 'PATCH':
+        full_name = request.data.get('full_name', request.data.get('fullName'))
+        if full_name is not None:
+            first, _, last = full_name.strip().partition(' ')
+            user.first_name = first
+            user.last_name = last
+        email = request.data.get('email')
+        if email is not None:
+            user.email = email
+        user.save()
+    return Response(MeSerializer(user).data)
 
 
-# ─── Admin Reset User Password ───────────────────────────────────────────────
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def admin_reset_password(request, user_id):
@@ -83,7 +90,6 @@ def admin_reset_password(request, user_id):
         return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
 
 
-# ─── User ViewSet ─────────────────────────────────────────────────────────────
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.prefetch_related('roles').order_by('-date_joined')
     permission_classes = [IsAuthenticated]
@@ -101,7 +107,6 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response({'detail': 'User deactivated.'})
 
 
-# ─── Role ViewSet ─────────────────────────────────────────────────────────────
 class RoleViewSet(viewsets.ModelViewSet):
     queryset = Role.objects.all()
     serializer_class = RoleSerializer
